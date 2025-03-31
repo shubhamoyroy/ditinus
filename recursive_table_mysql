@@ -1,0 +1,45 @@
+CREATE TABLE employees (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    parent_id INT DEFAULT NULL,
+    FOREIGN KEY (parent_id) REFERENCES employees(id) ON DELETE CASCADE
+);
+INSERT INTO employees (name, parent_id) VALUES 
+('Ramesh', NULL),
+('Gaurav', NULL),
+('Shalu', NULL),
+('Deepu', NULL),
+('Amit', NULL),
+('Sham Lal', NULL),
+('Kapil', NULL),
+('Prem Chopra', NULL);
+
+<?php
+$pdo = new PDO("mysql:host=localhost;dbname=test_db", "root", "");
+$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+function displayHierarchy($parent_id = NULL) {
+    global $pdo;
+    $stmt = $pdo->prepare("SELECT id, name FROM employees WHERE parent_id " . 
+                          ($parent_id === NULL ? "IS NULL" : "= :parent_id") . " ORDER BY name ASC");
+    
+    if ($parent_id !== NULL) {
+        $stmt->bindParam(':parent_id', $parent_id, PDO::PARAM_INT);
+    }
+    
+    $stmt->execute();
+    $employees = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    if (count($employees) > 0) {
+        echo "<ul>";
+        foreach ($employees as $employee) {
+            echo "<li>" . htmlspecialchars($employee['name']) . "</li>";
+            displayHierarchy($employee['id']);
+        }
+        echo "</ul>";
+    }
+}
+
+echo "<h3>Employee Hierarchy</h3>";
+displayHierarchy();
+?>
